@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<title>坦克大战 · CYBER TANK BATTLE</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body class="scanlines">
+
+<!-- ============ 主菜单 ============ -->
+<div id="menu" class="screen active">
+  <div class="menu-bg-grid"></div>
+  <div class="title-wrap">
+    <h1 class="title">坦 克 大 战</h1>
+    <div class="subtitle">◆ CYBER TANK BATTLE ◆</div>
+    <div class="title-en glow-cyan">WARFARE EDITION</div>
+  </div>
+  <div class="menu-buttons">
+    <button class="btn-neon btn-primary" data-action="tankselect">▶ 开始游戏</button>
+    <button class="btn-neon" data-action="start-survive">⟲ 无尽生存</button>
+    <button class="btn-neon" data-action="start-roguelike">♦ Roguelike 地牢</button>
+    <button class="btn-neon" data-action="start-bossrush">☠ Boss Rush</button>
+    <button class="btn-neon" data-action="settings">⚙ 设置</button>
+    <button class="btn-neon" data-action="leaderboard">♚ 排行榜</button>
+  </div>
+  <div class="hs-card">
+    <div class="hs-row"><span>最高分数</span><b id="hs-score">0</b></div>
+    <div class="hs-row"><span>最高关卡</span><b id="hs-level">1</b></div>
+    <div class="hs-row"><span>总击杀数</span><b id="hs-kills">0</b></div>
+  </div>
+  <div class="footer-hint">WASD / ↑↓←→ 移动 &nbsp; 空格 / J / 鼠标左键 射击 &nbsp; ESC 暂停</div>
+</div>
+
+<!-- ============ 坦克选择 ============ -->
+<div id="tank-select" class="screen">
+  <h2 class="panel-title glow-purple">▸ 选择你的坦克 ◂</h2>
+  <div class="tank-cards" id="tank-cards">
+    <!-- 卡片由 JS 渲染 -->
+  </div>
+  <div class="select-footer">
+    <button class="btn-neon" data-action="back-menu">← 返回</button>
+    <button class="btn-neon btn-primary" data-action="confirm-tank" id="btn-confirm-tank" disabled>确认出击 →</button>
+  </div>
+</div>
+
+<!-- ============ 游戏主界面 ============ -->
+<div id="game" class="screen">
+  <div id="hud">
+    <div class="hud-left">
+      <div class="hp-bar hud-bar"><span id="hp-fill"></span><em id="hp-text"></em></div>
+      <div class="shield-bar hud-bar"><span id="shield-fill"></span><em id="shield-text"></em></div>
+      <div class="weapon-info">
+        <span class="wi-icon">🔫</span>
+        <span class="wi-name" id="weapon-name">标准炮</span>
+      </div>
+    </div>
+    <div class="hud-center">
+      <div id="boss-bar" class="boss-bar hud-bar hidden">
+        <div class="boss-name" id="boss-name">BOSS</div>
+        <div class="boss-phase" id="boss-phase"></div>
+        <span id="boss-fill"></span>
+      </div>
+      <div class="level-info" id="level-info">第 1 关 · 经典闯关</div>
+    </div>
+    <div class="hud-right">
+      <div>波次 <span id="wave">1</span>/<span id="wave-max">5</span></div>
+      <div>击杀 <span id="kills">0</span></div>
+      <div>金币 <span id="coins">0</span></div>
+      <div>时间 <span id="time">00:00</span></div>
+      <div>分数 <span id="score">0</span></div>
+    </div>
+  </div>
+
+  <canvas id="canvas" width="960" height="640"></canvas>
+
+  <!-- Buff 三选一 -->
+  <div id="buff-select" class="overlay hidden">
+    <h2 class="glow-yellow">▸ 选 择 升 级 ◂</h2>
+    <div class="buff-subtitle" id="buff-subtitle">关卡完成！从下列强化中选择一项</div>
+    <div class="buff-cards" id="buff-cards"></div>
+    <button class="btn-neon btn-small" data-action="skip-buff">跳过（+100金币）</button>
+  </div>
+
+  <!-- 暂停 -->
+  <div id="pause" class="overlay hidden">
+    <h2 class="glow-cyan">▸ 已 暂 停 ◂</h2>
+    <button class="btn-neon btn-primary" data-action="resume">继续游戏</button>
+    <button class="btn-neon" data-action="restart">重新开始</button>
+    <button class="btn-neon" data-action="quit">返回主菜单</button>
+  </div>
+
+  <!-- 结算 -->
+  <div id="gameover" class="overlay hidden">
+    <h2 id="result-title" class="glow-red">▸ 任 务 失 败 ◂</h2>
+    <div id="result-detail"></div>
+    <div class="result-btns">
+      <button class="btn-neon btn-primary" data-action="retry">再来一局</button>
+      <button class="btn-neon" data-action="quit">返回主菜单</button>
+    </div>
+  </div>
+
+  <!-- 移动端控制 -->
+  <div id="touch-controls" class="hidden">
+    <div id="joystick"><div id="joystick-knob"></div></div>
+    <div class="touch-btns">
+      <button id="fire-btn">F I R E</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 设置 ============ -->
+<div id="settings" class="screen">
+  <h2 class="panel-title glow-cyan">▸ 设 置 ◂</h2>
+  <div class="settings-box">
+    <label class="s-row">
+      <span>音效开关</span>
+      <input type="checkbox" id="sound-toggle" checked />
+    </label>
+    <label class="s-row">
+      <span>音量</span>
+      <input type="range" id="volume" min="0" max="100" value="70" />
+    </label>
+    <label class="s-row">
+      <span>画质</span>
+      <select id="quality">
+        <option value="high">高（粒子全开）</option>
+        <option value="low">低（关闭粒子）</option>
+      </select>
+    </label>
+    <label class="s-row">
+      <span>屏幕震动</span>
+      <input type="checkbox" id="shake-toggle" checked />
+    </label>
+    <label class="s-row">
+      <span>虚拟摇杆</span>
+      <select id="joystick-toggle">
+        <option value="auto">自动（触屏设备）</option>
+        <option value="on">始终显示</option>
+        <option value="off">始终隐藏</option>
+      </select>
+    </label>
+  </div>
+  <button class="btn-neon btn-primary" data-action="save-settings">保存并返回</button>
+</div>
+
+<!-- ============ 排行榜 ============ -->
+<div id="leaderboard" class="screen">
+  <h2 class="panel-title glow-yellow">▸ 排 行 榜 ◂</h2>
+  <div class="lb-tabs">
+    <button class="lb-tab active" data-mode="classic">经典闯关</button>
+    <button class="lb-tab" data-mode="survive">无尽生存</button>
+    <button class="lb-tab" data-mode="bossrush">Boss Rush</button>
+  </div>
+  <div class="lb-list" id="lb-list"></div>
+  <button class="btn-neon" data-action="back-menu">← 返回</button>
+</div>
+
+<script type="module" src="game.js"></script>
+</body>
+</html>
